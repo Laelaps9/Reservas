@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+#MISE description="Run development server"
+
+if podman ps --format '{{.Names}}' | grep -q "^$DB_CONTAINER_NAME$"; then
+    npm run dev
+else
+    echo "Database container not active."
+fi

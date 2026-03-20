@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+#MISE description="Install npm dependencies"
+
+npm install

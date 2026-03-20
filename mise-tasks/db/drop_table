@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Drop \"asientos\" table in MySQL DB"
+
+podman exec -i $DB_CONTAINER_NAME mysql -u$MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE <<EOF
+DROP TABLE asientos;
+EOF

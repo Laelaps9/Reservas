@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+#MISE description="Create and set up MySQL podman container"
+
+if podman ps -a --format '{{.Names}}' | grep -q "^$DB_CONTAINER_NAME$"; then
+    echo "Container '$DB_CONTAINER_NAME' already exists. Skipping creation."
+else
+    podman run -d \
+      --name $DB_CONTAINER_NAME \
+      -p 3306:3306 \
+      -e MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD \
+      -e MYSQL_DATABASE=$MYSQL_DATABASE \
+      -e MYSQL_USER=$MYSQL_USER \
+      -e MYSQL_PASSWORD=$MYSQL_PASSWORD \
+      -v reservas_volume:/var/lib/mysql:Z \
+      mysql:9
+fi

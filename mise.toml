@@ -1,2 +1,15 @@
 [tools]
 node = "24"
+
+[env]
+DB_CONTAINER_NAME = 'reservas_db'
+MYSQL_ROOT_PASSWORD = 'root-secret'
+MYSQL_DATABASE = 'reservas'
+MYSQL_USER = 'user'
+MYSQL_PASSWORD = 'reservas-secret'
+
+[tasks.setup]
+description = 'Install npm dependencies and create database container and table'
+run = [
+    { tasks = ["install", "db:create_table"] },
+]
