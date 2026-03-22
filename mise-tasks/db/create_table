@@ -3,8 +3,8 @@
 #MISE depends = ["db:create_container"]
 
 podman exec -i $DB_CONTAINER_NAME mysql -u$MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE <<EOF
-CREATE TABLE asientos (
-    asiento INT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS asientos (
+    id INT PRIMARY KEY,
     estado ENUM('disponible', 'en_proceso', 'ocupado') NOT NULL DEFAULT 'disponible',
     expira DATETIME NULL
 );
