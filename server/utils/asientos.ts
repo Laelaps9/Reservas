@@ -65,10 +65,10 @@ export async function procesarAsiento(asientoId: number): Promise<void> {
   }
 }
 
-export async function confirmAsiento(asientoId: number): Promise<void> {
+export async function confirmarAsiento(asientoId: number): Promise<void> {
   const [result] = await db.query(
     `UPDATE asientos
-     SET estado = 'reservado', expira = NULL
+     SET estado = 'ocupado', expira = NULL
      WHERE id = ?
      AND estado = 'en_proceso'
      AND expira > NOW()`,
