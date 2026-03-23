@@ -1,60 +1,66 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import type { Asiento, AsientoEstado } from '../../types/asiento'
+import type { Fecha, FechaEstado } from '../../types/fecha'
 
-const asientos = ref<Asiento[]>([])
+const clientId = useState<string>('clientId', () => crypto.randomUUID())
+const fechas = ref<Fecha[]>([])
 
-const fetchAsientos = async () => {
-  asientos.value = await $fetch<Asiento[]>('/api/asientos')
+const fetchFechas = async () => {
+  fechas.value = await $fetch<Fecha[]>('/api/fechas')
 }
 
 onMounted(() => {
-  fetchAsientos()
+  fetchFechas()
 
   const ws = new WebSocket('ws://localhost:3001')
 
   ws.onmessage = (event: MessageEvent<string>) => {
     const data: {
-      type: 'asiento_update',
-      asientoId: number,
-      estado: AsientoEstado,
+      type: 'fecha_update',
+      fechaId: number,
+      estado: FechaEstado,
+      ocupado_por: string,
     } = JSON.parse(event.data)
 
-    const asiento = asientos.value.find((s) => s.id === data.asientoId)
-    if (asiento) {
-      asiento.estado = data.estado
+    const fecha = fechas.value.find((s) => s.id === data.fechaId)
+    if (fecha) {
+      fecha.estado = data.estado
+
+      if ('ocupado_por' in data) {
+        fecha.ocupado_por = data.ocupado_por
+      }
     }
   }
 })
 
-const procesarAsiento = async (asientoId: number) => {
+const procesarFecha = async (fechaId: number) => {
   await $fetch('/api/procesar', {
     method: 'POST',
-    body: { asientoId },
+    body: { fechaId, clientId: clientId.value },
   })
 }
 
-const confirmarAsiento = async (asientoId: number) => {
+const confirmarFecha = async (fechaId: number) => {
   await $fetch('api/confirmar', {
     method: 'POST',
-    body: { asientoId },
+    body: { fechaId, clientId: clientId.value },
   })
 }
 </script>
 
 <template>
   <div>
-    <div v-for="asiento in asientos" :key="asiento.id">
+    <div v-for="fecha in fechas" :key="fecha.id">
       <button
-        :disabled="asiento.estado !== 'disponible'"
-        @click="procesarAsiento(asiento.id)"
+        :disabled="fecha.estado !== 'disponible'"
+        @click="procesarFecha(fecha.id)"
       >
-        Asiento {{ asiento.id }} - {{ asiento.estado }}
+        Fecha {{ fecha.id }} - {{ fecha.estado }}
       </button>
 
       <button
-        v-if="asiento.estado === 'en_proceso'"
-        @click="confirmarAsiento(asiento.id)"
+        v-if="fecha.estado === 'en_proceso' && fecha.ocupado_por === clientId"
+        @click="confirmarFecha(fecha.id)"
       >
         Confirmar
       </button>

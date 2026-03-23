@@ -1,11 +1,12 @@
 import { WebSocketServer, WebSocket } from 'ws'
 
-export type EstadoAsiento = 'disponible' | 'en_proceso' | 'ocupado'
+export type FechaEstado = 'disponible' | 'en_proceso' | 'reservada'
 
-export interface AsientoUpdateMessage {
-  type: 'asiento_update',
-  asientoId: number,
-  estado: EstadoAsiento
+export interface FechaUpdateMessage {
+  type: 'fecha_update',
+  fechaId: number,
+  estado: FechaEstado,
+  ocupado_por: string | null
 }
 
 let wss: WebSocketServer | null = null
@@ -28,7 +29,7 @@ export function initWebSocketServer(port = 3001): WebSocketServer {
   return wss
 }
 
-export function broadcast(message: AsientoUpdateMessage): void {
+export function broadcast(message: FechaUpdateMessage): void {
   if (!wss) return
 
   const data = JSON.stringify(message)

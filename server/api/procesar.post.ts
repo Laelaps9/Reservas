@@ -1,15 +1,25 @@
-import { procesarAsiento } from '../utils/asientos'
+import { procesarFecha } from '../utils/fechas'
 import { broadcast } from '../utils/websocket'
 
-export default defineEventHandler(async (event) => {
-  const { asientoId } = await readBody<{ asientoId: number }>(event)
+interface ProcesarBody {
+  fechaId: number,
+  clientId: string
+}
 
-  await procesarAsiento(asientoId)
+export default defineEventHandler(async (event) => {
+  const body = await readBody<ProcesarBody>(event)
+
+  if (!body?.fechaId || !body?.clientId) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid input' })
+  }
+
+  await procesarFecha(body.fechaId, body.clientId)
 
   broadcast({
-    type: 'asiento_update',
-    asientoId,
-    estado: 'en_proceso'
+    type: 'fecha_update',
+    fechaId: body.fechaId,
+    estado: 'en_proceso',
+    ocupado_por: body.clientId
   })
 
   return { success: true }

@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-#MISE description="Create \"asientos\" table in MySQL DB"
+#MISE description="Create \"fechas\" table in MySQL DB"
 #MISE depends = ["db:create_container"]
 
 podman exec -i $DB_CONTAINER_NAME mysql -u$MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE <<EOF
-CREATE TABLE IF NOT EXISTS asientos (
-    id INT PRIMARY KEY,
-    estado ENUM('disponible', 'en_proceso', 'ocupado') NOT NULL DEFAULT 'disponible',
-    expira DATETIME NULL
+CREATE TABLE IF NOT EXISTS fechas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    fecha DATE NOT NULL UNIQUE,
+    estado ENUM('disponible', 'en_proceso', 'reservada') NOT NULL DEFAULT 'disponible',
+    ocupado_por VARCHAR(36) NULL
 );
 EOF

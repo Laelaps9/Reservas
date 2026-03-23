@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-#MISE description="Change \"asiento\" to \"en_proceso\""
+#MISE description="Change \"fecha\" to \"en_proceso\""
 
 curl -X POST http://localhost:3000/api/dev/procesar \
   -H "Content-Type: application/json" \
-  -d '{"asientoId":1}'
+  -d '{"fechaId":1}'

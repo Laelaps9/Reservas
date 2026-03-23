@@ -1,15 +1,24 @@
-import { confirmarAsiento } from '../utils/asientos'
+import { confirmarFecha } from '../utils/fechas'
 import { broadcast } from '../utils/websocket'
 
-export default defineEventHandler(async (event) => {
-  const { asientoId } = await readBody<{ asientoId: number }>(event)
+interface ConfirmarBody {
+  fechaId: number,
+  clientId: string
+}
 
-  await confirmarAsiento(asientoId)
+export default defineEventHandler(async (event) => {
+  const body = await readBody<ConfirmarBody>(event)
+
+  if (!body?.fechaId || !body?.clientId) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid input'})
+  }
+  await confirmarFecha(body.fechaId, body.clientId)
 
   broadcast({
-    type: 'asiento_update',
-    asientoId,
-    estado: 'ocupado',
+    type: 'fecha_update',
+    fechaId: body.fechaId,
+    estado: 'reservada',
+    ocupado_por: null
   })
 
   return { success: true }
