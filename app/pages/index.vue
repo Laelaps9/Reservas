@@ -2,33 +2,82 @@
 import { ref, onMounted } from 'vue'
 import type { Fecha, FechaEstado } from '../../types/fecha'
 
-const clientId = useState<string>('clientId', () => crypto.randomUUID())
 const fechas = ref<Fecha[]>([])
+const fechaSeleccionadaId = ref<number | null>(null)
+
+const clientId = useState<string>('clientId', () => crypto.randomUUID())
 
 const fetchFechas = async () => {
   fechas.value = await $fetch<Fecha[]>('/api/fechas')
 }
+
+const seleccionarFecha = async (fechaId: number) => {
+  try {
+    await $fetch('/api/seleccionar', {
+      method: 'POST',
+      body: {
+        fechaId,
+        clientId: clientId.value
+      }
+    })
+
+    fechaSeleccionadaId.value = fechaId
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+const confirmarFecha = async () => {
+  if (!fechaSeleccionadaId.value) return
+
+  await $fetch('/api/confirmar', {
+    method: 'POST',
+    body: {
+      fechaId: fechaSeleccionadaId.value,
+      clientId: clientId.value
+    }
+  })
+}
+
+const isDisabled = (d: Fecha) => {
+  return d.estado === 'reservada' ||
+      (d.estado === 'en_proceso' && d.ocupado_por !== clientId.value)
+}
+
+const isMine = (d: Fecha) => {
+  return d.estado === 'en_proceso' && d.ocupado_por === clientId.value
+}
+
 
 onMounted(() => {
   fetchFechas()
 
   const ws = new WebSocket('ws://localhost:3001')
 
+  ws.onopen = () => {
+    ws.send(JSON.stringify({
+      type: 'init',
+      clientId: clientId.value
+    }))
+  }
+
   ws.onmessage = (event: MessageEvent<string>) => {
-    const data: {
-      type: 'fecha_update',
-      fechaId: number,
-      estado: FechaEstado,
-      ocupado_por: string,
-    } = JSON.parse(event.data)
+    const data = JSON.parse(event.data)
 
-    const fecha = fechas.value.find((s) => s.id === data.fechaId)
-    if (fecha) {
-      fecha.estado = data.estado
+    if (data.type !== 'fecha_update') return
 
-      if ('ocupado_por' in data) {
-        fecha.ocupado_por = data.ocupado_por
-      }
+    const fecha = fechas.value.find(f => f.id === data.fechaId)
+    if (!fecha) return
+
+    fecha.estado = data.estado
+    fecha.ocupado_por = data.ocupado_por
+
+    if (data.ocupado_por !== clientId.value && fechaSeleccionadaId.value === fecha.id) {
+      fechaSeleccionadaId.value = null
+    }
+
+    if (data.estado === 'reservada' && fechaSeleccionadaId.value === fecha.id) {
+      fechaSeleccionadaId.value = null
     }
   }
 })
@@ -40,30 +89,37 @@ const procesarFecha = async (fechaId: number) => {
   })
 }
 
-const confirmarFecha = async (fechaId: number) => {
-  await $fetch('api/confirmar', {
-    method: 'POST',
-    body: { fechaId, clientId: clientId.value },
-  })
-}
 </script>
 
 <template>
-  <div>
-    <div v-for="fecha in fechas" :key="fecha.id">
-      <button
-        :disabled="fecha.estado !== 'disponible'"
-        @click="procesarFecha(fecha.id)"
-      >
-        Fecha {{ fecha.id }} - {{ fecha.estado }}
-      </button>
+<div>
+    <h1>Selecciona una fecha</h1>
 
-      <button
-        v-if="fecha.estado === 'en_proceso' && fecha.ocupado_por === clientId"
-        @click="confirmarFecha(fecha.id)"
-      >
-        Confirmar
-      </button>
-    </div>
+    <form>
+      <div v-for="f in fechas" :key="f.id" style="margin-bottom: 8px">
+        <label>
+          <input
+            type="radio"
+            :value="f.id"
+            v-model="fechaSeleccionadaId"
+            :disabled="isDisabled(f)"
+            @change="seleccionarFecha(f.id)"
+          />
+
+          {{ f.fecha ? new Date(f.fecha).toLocaleDateString() : '' }}
+
+          <span v-if="f.estado === 'reservada'"> (Reservada)</span>
+          <span v-else-if="isMine(f)"> (Your selection)</span>
+          <span v-else-if="f.estado === 'en_proceso'"> (Taken)</span>
+        </label>
+      </div>
+    </form>
+
+    <button
+      :disabled="!fechaSeleccionadaId"
+      @click="confirmarFecha"
+    >
+      Confirmar
+    </button>
   </div>
 </template>

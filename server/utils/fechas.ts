@@ -21,36 +21,65 @@ export async function getFechas(): Promise<Fecha[]> {
   return rows
 }
 
-export async function procesarFecha(fechaId: number, clientId: string): Promise<void> {
+export async function seleccionarFecha(fechaId: number, clientId: string): Promise<void> {
   const conn = await db.getConnection()
 
   try {
     await conn.beginTransaction()
 
-    const [rows] = await conn.query<FechaRow[]>(
+    const [prevRows]: any = await conn.query(
+      `SELECT id FROM fechas WHERE ocupado_por = ?`,
+      [clientId]
+    )
+
+    if (prevRows.length > 0) {
+      const prevId = prevRows[0].id
+
+      await conn.query(
+        `UPDATE fechas
+         SET estado = 'disponible', ocupado_por = NULL
+         WHERE id = ?`,
+         [prevId]
+      )
+
+      broadcast({
+        type: 'fecha_update',
+        fechaId: prevId,
+        estado: 'disponible',
+        ocupado_por: null
+      })
+    }
+
+    const [rows]: any = await conn.query(
       `SELECT * FROM fechas WHERE id = ? FOR UPDATE`,
       [fechaId]
     )
 
     const fecha = rows[0]
 
-    if(!fecha) {
+    if (!fecha) {
       throw createError({ statusCode: 404, statusMessage: 'Fecha no encontrada' })
     }
 
-    const isEnProceso = fecha.estado === 'en_proceso'
-
-    if (fecha.estado === 'reservada' || isEnProceso) {
+    if (fecha.estado !== 'disponible') {
       throw createError({ statusCode: 409, statusMessage: 'Fecha no disponible' })
     }
 
     await conn.query(
       `UPDATE fechas
-       SET estado = 'en_proceso', ocupado_por = ?  WHERE id = ?`,
+       SET estado = 'en_proceso', ocupado_por = ?
+       WHERE id = ?`,
        [clientId, fechaId]
     )
 
     await conn.commit()
+
+    broadcast({
+      type: 'fecha_update',
+      fechaId,
+      estado: 'en_proceso',
+      ocupado_por: clientId
+    })
   } catch (err) {
     await conn.rollback()
     throw err
@@ -69,10 +98,46 @@ export async function confirmarFecha(fechaId: number, clientId: string): Promise
      [fechaId, clientId]
   )
 
-  if(result.affectedRows === 0) {
+  if (result.affectedRows === 0) {
     throw createError({
       statusCode: 403,
-      statusMessage: 'No se pudo confirmar la fecha'
+      statusMessage: 'No se pudo confirmar fecha'
     })
   }
+
+  broadcast({
+    type: 'fecha_update',
+    fechaId,
+    estado: 'reservada',
+    ocupado_por: null
+  })
+}
+
+export async function liberar(clientId: string): Promise<number[]> {
+  const [rows]: any = await db.query(
+    `SELECT id FROM fechas WHERE ocupado_por = ?`,
+    [clientId]
+  )
+
+  if (rows.length === 0) return []
+
+  await db.query(
+    `UPDATE fechas
+     SET estado = 'disponible', ocupado_por = NULL
+     WHERE ocupado_por = ?`,
+     [clientId]
+  )
+
+  const ids = rows.map((r: any) => r.id)
+
+  for (const id of ids) {
+    broadcast({
+      type: 'fecha_update',
+      fechaId: id,
+      estado: 'disponible',
+      ocupado_por: null
+    })
+  }
+
+  return ids
 }
