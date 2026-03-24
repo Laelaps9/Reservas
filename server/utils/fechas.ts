@@ -9,6 +9,7 @@ interface FechaRow extends RowDataPacket {
   ocupado_por: string | null
 }
 
+// Regresa todas las fechas en nuestra base de datos
 export async function getFechas(): Promise<Fecha[]> {
   const [rows] = await db.query<FechaRow[]>(`
       SELECT id,
@@ -21,12 +22,14 @@ export async function getFechas(): Promise<Fecha[]> {
   return rows
 }
 
+// Cambia el estado de la fecha seleccionada a 'en_proceso'
 export async function seleccionarFecha(fechaId: number, clientId: string): Promise<void> {
   const conn = await db.getConnection()
 
   try {
     await conn.beginTransaction()
 
+    // Obtiene la fecha anteriormente seleccionada para después liberarla
     const [prevRows]: any = await conn.query(
       `SELECT id FROM fechas WHERE ocupado_por = ?`,
       [clientId]
@@ -50,6 +53,7 @@ export async function seleccionarFecha(fechaId: number, clientId: string): Promi
       })
     }
 
+    // Obtiene la nueva fecha seleccionada
     const [rows]: any = await conn.query(
       `SELECT * FROM fechas WHERE id = ? FOR UPDATE`,
       [fechaId]
@@ -88,6 +92,7 @@ export async function seleccionarFecha(fechaId: number, clientId: string): Promi
   }
 }
 
+// Confirma la fecha seleccionada por usuario con clientId
 export async function confirmarFecha(fechaId: number, clientId: string): Promise<void> {
   const [result]: any = await db.query(
     `UPDATE fechas
@@ -113,13 +118,14 @@ export async function confirmarFecha(fechaId: number, clientId: string): Promise
   })
 }
 
-export async function liberar(clientId: string): Promise<number[]> {
+// Libera la fecha seleccionada por usuario con clientId
+export async function liberarFechas(clientId: string): Promise<void> {
   const [rows]: any = await db.query(
     `SELECT id FROM fechas WHERE ocupado_por = ?`,
     [clientId]
   )
 
-  if (rows.length === 0) return []
+  if (rows.length === 0) return
 
   await db.query(
     `UPDATE fechas
@@ -138,6 +144,13 @@ export async function liberar(clientId: string): Promise<number[]> {
       ocupado_por: null
     })
   }
+}
 
-  return ids
+// Libera las fechas que quedaron en estado 'en_proceso'
+export async function limpiarFechasEnProceso(): Promise<void> {
+  await db.query(`
+      UPDATE fechas
+      SET estado = 'disponible', ocupado_por = NULL
+      WHERE estado = 'en_proceso'
+    `)
 }

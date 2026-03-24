@@ -1,7 +1,6 @@
 import { WebSocketServer, WebSocket } from 'ws'
-import { liberar } from './fechas'
-
-export type FechaEstado = 'disponible' | 'en_proceso' | 'reservada'
+import { liberarFechas, limpiarFechasEnProceso } from './fechas'
+import type { FechaEstado } from '../../types/fecha'
 
 type InitMessage = {
   type: 'init',
@@ -20,14 +19,16 @@ let wss: WebSocketServer | null = null
 export function initWebSocketServer(port = 3001): WebSocketServer {
   if (wss) return wss
 
+  // Al iniciar el servidor WS, limpia cualquier fecha que haya quedado en estado 'en_proceso'
+  limpiarFechasEnProceso()
+
   wss = new WebSocketServer({ port })
 
   wss.on('connection', (socket: WebSocket) => {
-    console.log('Client connected')
+    console.log('Cliente conectado')
     let clientId: string | null = null
 
     socket.on('message', (message) => {
-      const data = JSON.parse(message.toString()) as InitMessage
       try {
         const data = JSON.parse(message.toString()) as InitMessage
 
@@ -35,35 +36,28 @@ export function initWebSocketServer(port = 3001): WebSocketServer {
           clientId = data.clientId
         }
       } catch (err) {
-        console.error('Invalid WS message', err)
+        console.error('Mensaje WS inválido', err)
       }
     })
 
     socket.on('close', async () => {
       if (!clientId) return
 
-      const releasedIds = await liberar(clientId)
-      for (const id of releasedIds) {
-        broadcast({
-          type: 'fecha_update',
-          fechaId: id,
-          estado: 'disponible',
-          ocupado_por: null
-        })
-      }
+      // En caso de desconectarse, liberar fechas siendo procesadas por el usuario
+      await liberarFechas(clientId)
 
-      console.log(`Client disconnected: ${clientId}`)
+      console.log(`Cliente desconectado: ${clientId}`)
     })
   })
 
-  console.log(`WebSocket server running on ws://localhost:${port}`)
+  console.log(`Servidor WebSocket corriendo en ws://localhost:${port}`)
 
   return wss
 }
 
 export function broadcast(message: FechaUpdateMessage): void {
   if (!wss) {
-    console.warn('WebSocket server not initialized')
+    console.warn('Servidor WebSocket no inicializado')
     return
   }
 
