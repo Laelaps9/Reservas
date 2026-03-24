@@ -5,6 +5,7 @@ import type { Fecha, FechaEstado } from '../../types/fecha'
 const fechas = ref<Fecha[]>([])
 const fechaSeleccionadaId = ref<number | null>(null)
 
+// UUID para identificar al usuario
 const clientId = useState<string>('clientId', () => crypto.randomUUID())
 
 const fetchFechas = async () => {
@@ -92,34 +93,50 @@ const procesarFecha = async (fechaId: number) => {
 </script>
 
 <template>
-<div>
-    <h1>Selecciona una fecha</h1>
+  <div class="container">
+    <div class="card">
+      <h1>Selecciona una fecha</h1>
 
-    <form>
-      <div v-for="f in fechas" :key="f.id" style="margin-bottom: 8px">
-        <label>
+      <div class="list">
+        <label
+          v-for="f in fechas"
+          :key="f.id"
+          class="item"
+          :class="{
+            disabled: isDisabled(f) || f.estado === 'reservada',
+            seleccionado: isMine(f)
+          }"
+        >
           <input
             type="radio"
             :value="f.id"
             v-model="fechaSeleccionadaId"
             :disabled="isDisabled(f)"
-            @change="seleccionarFecha(f.id)"
+            @change="() => seleccionarFecha(f.id)"
           />
 
-          {{ f.fecha ? new Date(f.fecha).toLocaleDateString() : '' }}
+          <div class="content">
+            <span class="date">
+              {{ new Date(f.fecha).toISOString().split('T')[0] }}
+            </span>
 
-          <span v-if="f.estado === 'reservada'"> (Reservada)</span>
-          <span v-else-if="isMine(f)"> (Your selection)</span>
-          <span v-else-if="f.estado === 'en_proceso'"> (Taken)</span>
+            <span class="status">
+              <template v-if="f.estado === 'reservada'"></template>
+              <template v-else-if="isMine(f)"></template>
+              <template v-else-if="f.estado === 'en_proceso'"></template>
+              <template v-else>Disponible</template>
+            </span>
+          </div>
         </label>
       </div>
-    </form>
 
-    <button
-      :disabled="!fechaSeleccionadaId"
-      @click="confirmarFecha"
-    >
-      Confirmar
-    </button>
+      <button
+        class="confirm"
+        :disabled="!fechaSeleccionadaId"
+        @click="confirmarFecha"
+      >
+        Confirmar
+      </button>
+    </div>
   </div>
 </template>
