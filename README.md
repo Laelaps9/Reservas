@@ -1,6 +1,6 @@
 # Sistema de Reservas en Tiempo Real
 ## Descripción
-Aplicación web desarrollada con Nuxt 4 que permite a múltiples usuarios seleccionar y confirmar fechas en tiempo real, evitando conflictos mediante bloqueo temporal y sincronización con WebSockets.
+Aplicación web desarrollada con Nuxt 4 que permite a múltiples usuarios seleccionar y confirmar fechas en tiempo real.
 
 Permite:
 - Selección de fechas con bloqueo temporal
@@ -9,21 +9,22 @@ Permite:
 - Actualización en tiempo real entre clientes
 
 ## Tecnologías
-Nuxt 4
-Typescript
-Node.js 24
-MySQL 9
-WebSockets (ws)
-Podman
-mise (opcional)
+- Nuxt 4
+- Typescript
+- Node.js 24
+- MySQL 9
+- WebSockets (ws)
+- Podman
+- mise (opcional)
 
-> ![Note]
+> [!NOTE]
 > Para la instalación y uso correcto de este proyecto, es necesario un shell que te permita correr scripts de bash.
 
 ## Instalación
 
 ### Clonar repositorio
 `git clone https://github.com/Laelaps9/Reservas.git`
+
 `cd Reservas`
 
 ### Instalación manual
@@ -44,11 +45,12 @@ podman run -d \
       mysql:9
 ```
 No es necesario tener los mismos valores pero, en caso de cambiarlos, también se deben cambiar en el archivo `server/utils/db.ts`y `mise-tasks/db/crete_table` para funcionamiento correcto.
-> ![NOTE]
+> [!NOTE]
 > Los valores de contraseñas y usuario se mantuvieron simples para facilitar el uso del proyecto. En un proyecto real, no los pondría directamente en archivos o scripts, en vez usaría un .env para guardar las variables de entorno localmente.
 
-Una vez corriendo el contenedor, pueden usar los scripts en mise-tasks para crear y poblar la tabla que se usará en el proyecto.
+Una vez corriendo el contenedor, se pueden usar los scripts en mise-tasks para crear y poblar la tabla que se usará en el proyecto.
 
+#### Crear tabla
 `./mise-tasks/db/create_table` Crea la tabla 'fechas'. También es posible correrlo directamente en terminal:
 ```
 podman exec -i reservas_db mysql -uuser -preservas-secret reservas <<EOF
@@ -60,6 +62,7 @@ CREATE TABLE IF NOT EXISTS fechas (
 EOF
 ```
 
+#### Poblar tabla con fechas
 `node mise-tasks/db/create_dates.ts` Crea 16 fechas y las inserta la tabla 'fechas'.
 
 
@@ -81,7 +84,7 @@ Esta página muestra reservas activas y te da la opción de cancelarlas. La list
 
 
 ## Usando mise
-El proyecto fue hecho usando mise para manejo de versiones de Node.js y la creación de algunas tareas con el fin de hacer manejar el proyecto más sencillo.
+El proyecto fue hecho usando [mise](https://mise.jdx.dev/) para manejo de versiones de Node.js y la creación de algunas tareas con el fin de hacer manejar el proyecto más sencillo.
 
 `cd Reservas`
 
