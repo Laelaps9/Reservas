@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#MISE description="Run development server"
+#MISE description="Inicia el servidor en modo desarrollo"
 
 if podman ps --format '{{.Names}}' | grep -q "^$DB_CONTAINER_NAME$"; then
     npm run dev

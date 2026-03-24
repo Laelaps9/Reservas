@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-//MISE description="Fill DB table with dates"
+//MISE description="Llena la tabla \"fechas\" con fechas"
 import { db } from '../../server/utils/db.ts'
 
 async function createDates(count: number): Promise<void> {

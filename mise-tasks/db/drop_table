@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#MISE description="Drop \"fechas\" table in MySQL DB"
+#MISE description="Hace DROP a la tabla \"fechas\" en DB"
 
 podman exec -i $DB_CONTAINER_NAME mysql -u$MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE <<EOF
 DROP TABLE fechas;

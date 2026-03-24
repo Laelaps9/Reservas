@@ -40,11 +40,13 @@ const confirmarFecha = async () => {
   })
 }
 
+// Revisa si la fecha debe estar deshabilitada
 const isDisabled = (d: Fecha) => {
   return d.estado === 'reservada' ||
       (d.estado === 'en_proceso' && d.ocupado_por !== clientId.value)
 }
 
+// Revisa si la fecha es del usuario actual
 const isMine = (d: Fecha) => {
   return d.estado === 'en_proceso' && d.ocupado_por === clientId.value
 }
@@ -55,6 +57,7 @@ onMounted(() => {
 
   const ws = new WebSocket('ws://localhost:3001')
 
+  // Envía un mensaje con clientId al servidor WS cuando inicia la conexión
   ws.onopen = () => {
     ws.send(JSON.stringify({
       type: 'init',
@@ -62,6 +65,7 @@ onMounted(() => {
     }))
   }
 
+  // Recibe mensajes del servidor a través de un WS para actualizar la página en tiempo real
   ws.onmessage = (event: MessageEvent<string>) => {
     const data = JSON.parse(event.data)
 
@@ -73,23 +77,17 @@ onMounted(() => {
     fecha.estado = data.estado
     fecha.ocupado_por = data.ocupado_por
 
+    // Deshabilita la selección de una fecha si alguien más la tomó
     if (data.ocupado_por !== clientId.value && fechaSeleccionadaId.value === fecha.id) {
       fechaSeleccionadaId.value = null
     }
 
+    // Deshabilita selección la fecha que fue reservada
     if (data.estado === 'reservada' && fechaSeleccionadaId.value === fecha.id) {
       fechaSeleccionadaId.value = null
     }
   }
 })
-
-const procesarFecha = async (fechaId: number) => {
-  await $fetch('/api/procesar', {
-    method: 'POST',
-    body: { fechaId, clientId: clientId.value },
-  })
-}
-
 </script>
 
 <template>

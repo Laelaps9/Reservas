@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#MISE description="Create and set up MySQL podman container"
+#MISE description="Crea y monta un contenedor de MYSQL con podman"
 
 if podman ps -a --format '{{.Names}}' | grep -q "^$DB_CONTAINER_NAME$"; then
     echo "Container '$DB_CONTAINER_NAME' already exists. Skipping creation."

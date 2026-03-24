@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#MISE description="Create \"fechas\" table in MySQL DB"
+#MISE description="Crea tabla \"fechas\" en DB"
 #MISE depends = ["db:create_container"]
 
 podman exec -i $DB_CONTAINER_NAME mysql -u$MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE <<EOF

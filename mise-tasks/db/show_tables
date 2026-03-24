@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#MISE description="Show tables in database"
+#MISE description="Muestra tablas en la DB"
 
 podman exec -it $DB_CONTAINER_NAME mysql -u$MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE -e "SHOW TABLES;"
 
