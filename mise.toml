@@ -11,6 +11,7 @@ MYSQL_PASSWORD = 'reservas-secret'
 [tasks.setup]
 description = 'Instala dependencias de npm y crea contenedor de MySQL y tabla de fechas'
 run = [
-    { tasks = ["install", "db:create_table"] },
+    { tasks = ["install", "db:create_container"] },
+    { task = "db:create_table" },
     { task = "db:create_dates" },
 ]
