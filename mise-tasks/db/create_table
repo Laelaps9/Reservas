@@ -2,7 +2,7 @@
 #MISE description="Crea tabla \"fechas\" en DB"
 #MISE depends = ["db:create_container"]
 
-podman exec -i $DB_CONTAINER_NAME mysql -u$MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE <<EOF
+podman exec -i reservas_db mysql -uuser -preservas-secret reservas <<EOF
 CREATE TABLE IF NOT EXISTS fechas (
     id INT AUTO_INCREMENT PRIMARY KEY,
     fecha DATE NOT NULL UNIQUE,
