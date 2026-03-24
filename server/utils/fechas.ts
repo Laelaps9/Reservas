@@ -154,3 +154,32 @@ export async function limpiarFechasEnProceso(): Promise<void> {
       WHERE estado = 'en_proceso'
     `)
 }
+
+export async function getFechasReservadas(): Promise<Fecha[]> {
+  const [rows] = await db.query<FechaRow[]>(`
+      SELECT id,
+        fecha,
+        estado,
+        ocupado_por
+      FROM fechas
+      WHERE estado = 'reservada'
+    `)
+
+  return rows
+}
+
+export async function cancelarFecha(fechaId: number): Promise<void> {
+  await db.query(`
+      UPDATE fechas
+      SET estado = 'disponible', ocupado_por = NULL
+      WHERE id = ? AND estado = 'reservada'`,
+      [fechaId]
+    )
+
+  broadcast({
+    type: 'fecha_update',
+    fechaId,
+    estado: 'disponible',
+    ocupado_por: null
+  })
+}
